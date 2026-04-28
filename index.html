@@ -17,43 +17,120 @@ body {
 }
 
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: rgba(255,255,255,0.75);
-  z-index: -1;
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(255,255,255,0.75);
+  z-index:-1;
 }
 
-.slot {
-  height: 120px;
-  overflow: hidden;
-  font-size: 50px;
-  font-weight: bold;
-  text-align: center;
+/* SLOT */
+.slot-viewport {
+  height:240px;
+  overflow:hidden;
+  position:relative;
+  border-radius:16px;
+  background:#f0f4f8;
 }
 
+.slot-viewport::before,
+.slot-viewport::after {
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  height:80px;
+  z-index:2;
+}
+
+.slot-viewport::before {
+  top:0;
+  background:linear-gradient(to bottom, #f0f4f8, transparent);
+}
+
+.slot-viewport::after {
+  bottom:0;
+  background:linear-gradient(to top, #f0f4f8, transparent);
+}
+
+.slot-highlight {
+  position:absolute;
+  top:80px;
+  height:80px;
+  left:0;
+  right:0;
+  border-top:3px solid #e4650e;
+  border-bottom:3px solid #e4650e;
+  background:rgba(228,101,14,0.08);
+  z-index:1;
+}
+
+.slot-reel {
+  display:flex;
+  flex-direction:column;
+  transition: transform 3s cubic-bezier(0.15, 0.85, 0.35, 1);
+}
+
+.slot-cell {
+  height:80px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  font-weight:700;
+  color:#174290;
+  filter:blur(4px);
+  opacity:0.3;
+  transition:all .3s;
+}
+
+.slot-cell.winner {
+  filter:blur(0);
+  opacity:1;
+}
+
+/* RESULTADO */
+.result-badge {
+  width:80px;
+  height:80px;
+  border-radius:50%;
+  background:#174290;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  font-weight:700;
+  box-shadow:0 4px 12px rgba(23,66,144,.4);
+  animation:pop .4s ease-out;
+}
+
+@keyframes pop {
+  0% {transform:scale(0); opacity:0;}
+  70% {transform:scale(1.15);}
+  100% {transform:scale(1);}
+}
+
+/* MASCOTE */
 .mascote {
-  position: fixed;
-  bottom: 40px;
-  right: 20px;
-  width: 250px;
-  display: none;
-  animation: float 2s infinite ease-in-out;
+  position:fixed;
+  bottom:40px;
+  right:10px;
+  width:280px;
+  display:none;
+  animation:swing 2s infinite ease-in-out;
 }
 
-@keyframes float {
-  0% {transform: translateY(0);}
-  50% {transform: translateY(-10px);}
-  100% {transform: translateY(0);}
+@keyframes swing {
+  0%,100%{transform:rotate(-2deg)}
+  50%{transform:rotate(2deg)}
 }
 
+/* CONFETE */
 #confetti {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+  position:fixed;
+  inset:0;
+  pointer-events:none;
 }
 </style>
 </head>
@@ -82,12 +159,18 @@ SORTEAR
 </button>
 </div>
 
-<div id="slot" class="slot"></div>
+<div id="slot-container" class="hidden w-full max-w-xs mb-6">
+  <div class="slot-viewport">
+    <div class="slot-highlight"></div>
+    <div id="slot-reel" class="slot-reel"></div>
+  </div>
+</div>
+
+<div id="resultado" class="flex gap-4"></div>
 
 </main>
 
 <img src="images/mascote.png" class="mascote" id="mascote">
-
 <canvas id="confetti"></canvas>
 
 <footer class="text-center py-4 text-white" style="background:#011b5c;">
@@ -95,71 +178,114 @@ GANEP Educação — Sorteador Online
 </footer>
 
 <script>
-function playSound(){
- new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
-}
+const CELL = 80;
 
 function confetti(){
- const canvas = document.getElementById("confetti");
- const ctx = canvas.getContext("2d");
- canvas.width = innerWidth;
- canvas.height = innerHeight;
-
+ const c=document.getElementById("confetti");
+ const ctx=c.getContext("2d");
+ c.width=innerWidth;
+ c.height=innerHeight;
  let p=[];
- for(let i=0;i<100;i++){
-  p.push({x:0,y:canvas.height,vx:Math.random()*6,vy:-Math.random()*10,life:100});
+ for(let i=0;i<120;i++){
+  p.push({x:0,y:c.height,vx:Math.random()*8,vy:-Math.random()*10,life:100});
  }
-
- function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+ function a(){
+  ctx.clearRect(0,0,c.width,c.height);
   p.forEach(o=>{
    o.x+=o.vx;
    o.y+=o.vy;
    o.vy+=0.3;
    o.life--;
-   ctx.fillRect(o.x,o.y,5,5);
+   ctx.fillRect(o.x,o.y,6,6);
   });
   p=p.filter(o=>o.life>0);
-  if(p.length) requestAnimationFrame(draw);
+  if(p.length) requestAnimationFrame(a);
  }
- draw();
+ a();
 }
 
-async function spin(final){
- const el=document.getElementById("slot");
- for(let i=0;i<25;i++){
-  el.innerText=Math.floor(Math.random()*100);
-  await new Promise(r=>setTimeout(r,60));
+function sound(){
+ new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
+}
+
+function build(list,win){
+ let arr=[];
+ for(let i=0;i<6;i++){
+  arr.push(...list.sort(()=>Math.random()-0.5));
  }
- el.innerHTML=`<div>${final}</div>`;
+ arr.push(win);
+ arr.push(list[Math.floor(Math.random()*list.length)]);
+ return arr;
+}
+
+function spin(list,win){
+ return new Promise(res=>{
+  const reel=document.getElementById("slot-reel");
+  const box=document.getElementById("slot-container");
+
+  box.classList.remove("hidden");
+  reel.innerHTML="";
+
+  const data=build(list,win);
+  const winIndex=data.length-2;
+
+  data.forEach((n,i)=>{
+   const d=document.createElement("div");
+   d.className="slot-cell";
+   if(i===winIndex) d.classList.add("winner");
+   d.innerText=n;
+   reel.appendChild(d);
+  });
+
+  const y=-(winIndex*CELL - CELL);
+
+  requestAnimationFrame(()=>{
+    reel.style.transform=`translateY(${y}px)`;
+  });
+
+  setTimeout(res,3000);
+ });
 }
 
 async function sortear(){
- const min=parseInt(document.getElementById("min").value);
- const max=parseInt(document.getElementById("max").value);
- const qty=parseInt(document.getElementById("qty").value);
+ const min=+minEl.value;
+ const max=+maxEl.value;
+ const qty=+qtyEl.value;
 
- if(isNaN(min)||isNaN(max)||isNaN(qty)) return alert("Preencha corretamente");
- if(min>=max) return alert("Mínimo deve ser menor");
+ if(!min||!max||!qty) return alert("Preencha corretamente");
+ if(min>=max) return alert("Intervalo inválido");
  if(qty>(max-min+1)) return alert("Quantidade inválida");
 
+ let list=[];
+ for(let i=min;i<=max;i++) list.push(i);
+
  let usados=[];
+ resultado.innerHTML="";
 
  for(let i=0;i<qty;i++){
-  let num;
-  do{
-   num=Math.floor(Math.random()*(max-min+1))+min;
-  }while(usados.includes(num));
-  usados.push(num);
+  let n;
+  do{ n=list[Math.floor(Math.random()*list.length)] }
+  while(usados.includes(n));
+  usados.push(n);
 
-  await spin(num);
+  await spin(list,n);
+
+  const b=document.createElement("div");
+  b.className="result-badge";
+  b.innerText=n;
+  resultado.appendChild(b);
  }
 
- document.getElementById("mascote").style.display="block";
-
+ mascote.style.display="block";
  confetti();
- playSound();
+ sound();
 }
+
+const minEl=document.getElementById("min");
+const maxEl=document.getElementById("max");
+const qtyEl=document.getElementById("qty");
+const resultado=document.getElementById("resultado");
+const mascote=document.getElementById("mascote");
 </script>
 
 </body>
