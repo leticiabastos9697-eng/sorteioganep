@@ -1,111 +1,164 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sorteador GANEP</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorteador GANEP</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
-  <style>
-    body {
+<style>
+body {
   font-family: 'DM Sans', sans-serif;
   background-image: url('images/fundo.png');
   background-size: cover;
   background-position: center;
-  background-repeat: no-repeat;
 }
 
-    .result-badge {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: #174290;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      font-weight: bold;
-      margin: 20px auto;
-    }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.75);
+  z-index: -1;
+}
 
-    .mascote {
-      position: fixed;
-      bottom: 40px;
-      right: 20px;
-      width: 250px;
-      display: none;
-    }
-  </style>
+.slot {
+  height: 120px;
+  overflow: hidden;
+  font-size: 50px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.mascote {
+  position: fixed;
+  bottom: 40px;
+  right: 20px;
+  width: 250px;
+  display: none;
+  animation: float 2s infinite ease-in-out;
+}
+
+@keyframes float {
+  0% {transform: translateY(0);}
+  50% {transform: translateY(-10px);}
+  100% {transform: translateY(0);}
+}
+
+#confetti {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+</style>
 </head>
 
 <body class="min-h-screen flex flex-col">
 
 <header class="px-6 py-4 flex items-center gap-4" style="background:#174290;">
-  <img src="images/logo.png" class="h-12" alt="Logo">
-  <h1 class="text-white text-2xl font-bold">Sorteador GANEP</h1>
+<img src="images/logo.png" class="h-12">
+<h1 class="text-white text-2xl font-bold">Sorteador GANEP</h1>
 </header>
 
 <main class="flex-1 flex flex-col items-center px-4 py-8">
 
-  <div class="w-full max-w-lg bg-white rounded-2xl shadow-lg p-6 mb-8">
-    <h2 class="text-center font-bold text-xl mb-6 text-[#174290]">Sorteio de Números</h2>
+<div class="w-full max-w-lg bg-white rounded-2xl shadow-lg p-6 mb-8">
+<h2 class="text-center font-bold text-xl mb-6 text-[#174290]">Sorteio de Números</h2>
 
-    <div class="grid grid-cols-2 gap-4 mb-4">
-      <input id="input-min" type="number" value="1" class="border p-2 rounded w-full">
-      <input id="input-max" type="number" value="100" class="border p-2 rounded w-full">
-    </div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<input id="min" type="number" value="1" class="border p-2 rounded">
+<input id="max" type="number" value="100" class="border p-2 rounded">
+</div>
 
-    <input id="input-qty" type="number" value="1" min="1" class="border p-2 rounded w-full mb-4">
+<input id="qty" type="number" value="1" class="border p-2 rounded w-full mb-4">
 
-    <button onclick="sortear()" class="w-full py-3 bg-orange-500 text-white rounded-xl font-bold">
-      SORTEAR
-    </button>
-  </div>
+<button onclick="sortear()" class="w-full py-3 bg-orange-500 text-white rounded-xl font-bold">
+SORTEAR
+</button>
+</div>
 
-  <div id="resultado"></div>
+<div id="slot" class="slot"></div>
 
 </main>
 
-<img src="images/mascote.png" class="mascote" id="mascote" alt="Mascote">
+<img src="images/mascote.png" class="mascote" id="mascote">
+
+<canvas id="confetti"></canvas>
 
 <footer class="text-center py-4 text-white" style="background:#011b5c;">
-  GANEP Educação — Sorteador Online
+GANEP Educação — Sorteador Online
 </footer>
 
 <script>
-function sortear() {
-  const min = parseInt(document.getElementById('input-min').value);
-  const max = parseInt(document.getElementById('input-max').value);
-  const qty = parseInt(document.getElementById('input-qty').value);
+function playSound(){
+ new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
+}
 
-  if (min >= max) {
-    alert("O número mínimo deve ser menor que o máximo");
-    return;
-  }
+function confetti(){
+ const canvas = document.getElementById("confetti");
+ const ctx = canvas.getContext("2d");
+ canvas.width = innerWidth;
+ canvas.height = innerHeight;
 
-  let resultados = [];
+ let p=[];
+ for(let i=0;i<100;i++){
+  p.push({x:0,y:canvas.height,vx:Math.random()*6,vy:-Math.random()*10,life:100});
+ }
 
-  while (resultados.length < qty) {
-    let num = Math.floor(Math.random() * (max - min + 1)) + min;
-    if (!resultados.includes(num)) {
-      resultados.push(num);
-    }
-  }
-
-  const container = document.getElementById('resultado');
-  container.innerHTML = "";
-
-  resultados.forEach(n => {
-    const div = document.createElement("div");
-    div.className = "result-badge";
-    div.innerText = n;
-    container.appendChild(div);
+ function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  p.forEach(o=>{
+   o.x+=o.vx;
+   o.y+=o.vy;
+   o.vy+=0.3;
+   o.life--;
+   ctx.fillRect(o.x,o.y,5,5);
   });
+  p=p.filter(o=>o.life>0);
+  if(p.length) requestAnimationFrame(draw);
+ }
+ draw();
+}
 
-  document.getElementById('mascote').style.display = "block";
+async function spin(final){
+ const el=document.getElementById("slot");
+ for(let i=0;i<25;i++){
+  el.innerText=Math.floor(Math.random()*100);
+  await new Promise(r=>setTimeout(r,60));
+ }
+ el.innerHTML=`<div>${final}</div>`;
+}
+
+async function sortear(){
+ const min=parseInt(document.getElementById("min").value);
+ const max=parseInt(document.getElementById("max").value);
+ const qty=parseInt(document.getElementById("qty").value);
+
+ if(isNaN(min)||isNaN(max)||isNaN(qty)) return alert("Preencha corretamente");
+ if(min>=max) return alert("Mínimo deve ser menor");
+ if(qty>(max-min+1)) return alert("Quantidade inválida");
+
+ let usados=[];
+
+ for(let i=0;i<qty;i++){
+  let num;
+  do{
+   num=Math.floor(Math.random()*(max-min+1))+min;
+  }while(usados.includes(num));
+  usados.push(num);
+
+  await spin(num);
+ }
+
+ document.getElementById("mascote").style.display="block";
+
+ confetti();
+ playSound();
 }
 </script>
 
