@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sorteador GANEP</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+  font-family: 'DM Sans', sans-serif;
+  background-image: url('images/fundo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+    .result-badge {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #174290;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: bold;
+      margin: 20px auto;
+    }
+
+    .mascote {
+      position: fixed;
+      bottom: 40px;
+      right: 20px;
+      width: 250px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+<header class="px-6 py-4 flex items-center gap-4" style="background:#174290;">
+  <img src="images/logo.png" class="h-12" alt="Logo">
+  <h1 class="text-white text-2xl font-bold">Sorteador GANEP</h1>
+</header>
+
+<main class="flex-1 flex flex-col items-center px-4 py-8">
+
+  <div class="w-full max-w-lg bg-white rounded-2xl shadow-lg p-6 mb-8">
+    <h2 class="text-center font-bold text-xl mb-6 text-[#174290]">Sorteio de Números</h2>
+
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <input id="input-min" type="number" value="1" class="border p-2 rounded w-full">
+      <input id="input-max" type="number" value="100" class="border p-2 rounded w-full">
+    </div>
+
+    <input id="input-qty" type="number" value="1" min="1" class="border p-2 rounded w-full mb-4">
+
+    <button onclick="sortear()" class="w-full py-3 bg-orange-500 text-white rounded-xl font-bold">
+      SORTEAR
+    </button>
+  </div>
+
+  <div id="resultado"></div>
+
+</main>
+
+<img src="images/mascote.png" class="mascote" id="mascote" alt="Mascote">
+
+<footer class="text-center py-4 text-white" style="background:#011b5c;">
+  GANEP Educação — Sorteador Online
+</footer>
+
+<script>
+function sortear() {
+  const min = parseInt(document.getElementById('input-min').value);
+  const max = parseInt(document.getElementById('input-max').value);
+  const qty = parseInt(document.getElementById('input-qty').value);
+
+  if (min >= max) {
+    alert("O número mínimo deve ser menor que o máximo");
+    return;
+  }
+
+  let resultados = [];
+
+  while (resultados.length < qty) {
+    let num = Math.floor(Math.random() * (max - min + 1)) + min;
+    if (!resultados.includes(num)) {
+      resultados.push(num);
+    }
+  }
+
+  const container = document.getElementById('resultado');
+  container.innerHTML = "";
+
+  resultados.forEach(n => {
+    const div = document.createElement("div");
+    div.className = "result-badge";
+    div.innerText = n;
+    container.appendChild(div);
+  });
+
+  document.getElementById('mascote').style.display = "block";
+}
+</script>
+
+</body>
+</html>
