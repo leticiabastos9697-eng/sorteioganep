@@ -15,7 +15,6 @@ body {
   background-size: cover;
   background-position: center;
 }
-
 body::before {
   content:"";
   position:fixed;
@@ -32,7 +31,6 @@ body::before {
   border-radius:16px;
   background:#f0f4f8;
 }
-
 .slot-viewport::before,
 .slot-viewport::after {
   content:'';
@@ -42,17 +40,14 @@ body::before {
   height:80px;
   z-index:2;
 }
-
 .slot-viewport::before {
   top:0;
   background:linear-gradient(to bottom, #f0f4f8, transparent);
 }
-
 .slot-viewport::after {
   bottom:0;
   background:linear-gradient(to top, #f0f4f8, transparent);
 }
-
 .slot-highlight {
   position:absolute;
   top:80px;
@@ -62,15 +57,12 @@ body::before {
   border-top:3px solid #e4650e;
   border-bottom:3px solid #e4650e;
   background:rgba(228,101,14,0.08);
-  z-index:1;
 }
-
 .slot-reel {
   display:flex;
   flex-direction:column;
   transition: transform 3s cubic-bezier(0.15, 0.85, 0.35, 1);
 }
-
 .slot-cell {
   height:80px;
   display:flex;
@@ -81,9 +73,7 @@ body::before {
   color:#174290;
   filter:blur(4px);
   opacity:0.3;
-  transition:all .3s;
 }
-
 .slot-cell.winner {
   filter:blur(0);
   opacity:1;
@@ -104,7 +94,6 @@ body::before {
   box-shadow:0 4px 12px rgba(23,66,144,.4);
   animation:pop .4s ease-out;
 }
-
 @keyframes pop {
   0% {transform:scale(0); opacity:0;}
   70% {transform:scale(1.15);}
@@ -116,14 +105,35 @@ body::before {
   position:fixed;
   bottom:40px;
   right:10px;
-  width:280px;
+  width:260px;
   display:none;
   animation:swing 2s infinite ease-in-out;
 }
-
 @keyframes swing {
   0%,100%{transform:rotate(-2deg)}
   50%{transform:rotate(2deg)}
+}
+
+/* BALÃO */
+.speech {
+  position: fixed;
+  bottom: 260px;
+  right: 40px;
+  background: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: bold;
+  display: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.speech::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-top-color: white;
 }
 
 /* CONFETE */
@@ -166,11 +176,17 @@ SORTEAR
   </div>
 </div>
 
-<div id="resultado" class="flex gap-4"></div>
+<div id="resultado" class="flex gap-4 flex-wrap justify-center"></div>
+
+<button onclick="resetar()" class="mt-6 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold">
+Novo sorteio
+</button>
 
 </main>
 
 <img src="images/mascote.png" class="mascote" id="mascote">
+<div id="speech" class="speech">Parabéns 🎉</div>
+
 <canvas id="confetti"></canvas>
 
 <footer class="text-center py-4 text-white" style="background:#011b5c;">
@@ -180,34 +196,74 @@ GANEP Educação — Sorteador Online
 <script>
 const CELL = 80;
 
-function confetti(){
- const c=document.getElementById("confetti");
- const ctx=c.getContext("2d");
- c.width=innerWidth;
- c.height=innerHeight;
- let p=[];
- for(let i=0;i<120;i++){
-  p.push({x:0,y:c.height,vx:Math.random()*8,vy:-Math.random()*10,life:100});
- }
- function a(){
-  ctx.clearRect(0,0,c.width,c.height);
-  p.forEach(o=>{
-   o.x+=o.vx;
-   o.y+=o.vy;
-   o.vy+=0.3;
-   o.life--;
-   ctx.fillRect(o.x,o.y,6,6);
-  });
-  p=p.filter(o=>o.life>0);
-  if(p.length) requestAnimationFrame(a);
- }
- a();
+/* AUDIO CONFETE */
+let confettiSound = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-party-confetti-boost-1686.mp3");
+confettiSound.loop = true;
+confettiSound.volume = 0.4;
+
+/* CONFETE */
+let confettiInterval;
+let particles = [];
+
+function startConfetti() {
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  function burst() {
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: 0,
+        y: canvas.height,
+        vx: Math.random()*8,
+        vy: -Math.random()*10,
+        life: 100,
+        color: `hsl(${Math.random()*360},100%,50%)`
+      });
+    }
+  }
+
+  burst();
+  confettiInterval = setInterval(burst, 500);
+
+  let start = Date.now();
+
+  function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    particles.forEach(p=>{
+      p.x+=p.vx;
+      p.y+=p.vy;
+      p.vy+=0.3;
+      p.life--;
+
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x,p.y,6,6);
+    });
+
+    particles = particles.filter(p=>p.life>0);
+
+    if(Date.now()-start<60000 || particles.length){
+      requestAnimationFrame(animate);
+    }
+  }
+
+  animate();
+
+  confettiSound.currentTime = 0;
+  confettiSound.play();
 }
 
-function sound(){
- new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg").play();
+function stopConfetti(){
+  clearInterval(confettiInterval);
+  particles = [];
+  confettiSound.pause();
+  confettiSound.currentTime = 0;
 }
 
+/* SLOT */
 function build(list,win){
  let arr=[];
  for(let i=0;i<6;i++){
@@ -247,10 +303,11 @@ function spin(list,win){
  });
 }
 
+/* SORTEIO */
 async function sortear(){
- const min=+minEl.value;
- const max=+maxEl.value;
- const qty=+qtyEl.value;
+ const min=+document.getElementById("min").value;
+ const max=+document.getElementById("max").value;
+ const qty=+document.getElementById("qty").value;
 
  if(!min||!max||!qty) return alert("Preencha corretamente");
  if(min>=max) return alert("Intervalo inválido");
@@ -260,12 +317,14 @@ async function sortear(){
  for(let i=min;i<=max;i++) list.push(i);
 
  let usados=[];
+ const resultado=document.getElementById("resultado");
  resultado.innerHTML="";
 
  for(let i=0;i<qty;i++){
   let n;
   do{ n=list[Math.floor(Math.random()*list.length)] }
   while(usados.includes(n));
+
   usados.push(n);
 
   await spin(list,n);
@@ -276,16 +335,23 @@ async function sortear(){
   resultado.appendChild(b);
  }
 
- mascote.style.display="block";
- confetti();
- sound();
+ document.getElementById("mascote").style.display="block";
+ document.getElementById("speech").style.display="block";
+
+ startConfetti();
+
+ resultado.scrollIntoView({behavior:"smooth", block:"center"});
 }
 
-const minEl=document.getElementById("min");
-const maxEl=document.getElementById("max");
-const qtyEl=document.getElementById("qty");
-const resultado=document.getElementById("resultado");
-const mascote=document.getElementById("mascote");
+/* RESET */
+function resetar(){
+ document.getElementById("resultado").innerHTML="";
+ document.getElementById("slot-container").classList.add("hidden");
+ document.getElementById("mascote").style.display="none";
+ document.getElementById("speech").style.display="none";
+
+ stopConfetti();
+}
 </script>
 
 </body>
